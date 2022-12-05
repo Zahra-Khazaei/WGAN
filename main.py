@@ -80,7 +80,7 @@ class Discriminator(nn.Module):
         return validity
 
 
-# Initialize generator and discriminator
+
 generator = Generator()
 discriminator = Discriminator()
 
@@ -88,7 +88,7 @@ if cuda:
     generator.cuda()
     discriminator.cuda()
 
-# Configure data loader
+
 os.makedirs("../../data/mnist", exist_ok=True)
 dataloader = torch.utils.data.DataLoader(
     datasets.MNIST(
@@ -101,57 +101,42 @@ dataloader = torch.utils.data.DataLoader(
     shuffle=True,
 )
 
-# Optimizers
+
 optimizer_G = torch.optim.RMSprop(generator.parameters(), lr=opt.lr)
 optimizer_D = torch.optim.RMSprop(discriminator.parameters(), lr=opt.lr)
 
 Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 
-# ----------
-#  Training
-# ----------
+
 
 batches_done = 0
 for epoch in range(opt.n_epochs):
 
     for i, (imgs, _) in enumerate(dataloader):
 
-        # Configure input
         real_imgs = Variable(imgs.type(Tensor))
 
-        # ---------------------
-        #  Train Discriminator
-        # ---------------------
+
 
         optimizer_D.zero_grad()
 
-        # Sample noise as generator input
         z = Variable(Tensor(np.random.normal(0, 1, (imgs.shape[0], opt.latent_dim))))
 
-        # Generate a batch of images
         fake_imgs = generator(z).detach()
-        # Adversarial loss
         loss_D = -torch.mean(discriminator(real_imgs)) + torch.mean(discriminator(fake_imgs))
 
         loss_D.backward()
         optimizer_D.step()
 
-        # Clip weights of discriminator
         for p in discriminator.parameters():
             p.data.clamp_(-opt.clip_value, opt.clip_value)
 
-        # Train the generator every n_critic iterations
         if i % opt.n_critic == 0:
-
-            # -----------------
-            #  Train Generator
-            # -----------------
 
             optimizer_G.zero_grad()
 
-            # Generate a batch of images
+
             gen_imgs = generator(z)
-            # Adversarial loss
             loss_G = -torch.mean(discriminator(gen_imgs))
 
             loss_G.backward()
